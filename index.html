@@ -112,6 +112,19 @@ details summary{cursor:pointer;font-weight:700;color:var(--brand-2)}
 details p,details li{font-size:13.5px}
 code{background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12.5px}
 .note{border-left:4px solid var(--brand);background:var(--panel2);padding:10px 12px;border-radius:8px;font-size:13.5px}
+
+/* Pestañas de cartones */
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:thin}
+.tab{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;font-size:14px;white-space:nowrap}
+.tab.on{background:var(--brand);border-color:var(--brand);color:#1b1510;font-weight:700}
+.tab .dot{font-size:11px;font-weight:800;padding:1px 6px;border-radius:999px;background:var(--warn-bg);color:var(--warn)}
+.tab .dot.win{background:var(--ok-bg);color:var(--ok)}
+.tab .dot.err{background:transparent;color:var(--bad)}
+.tab.add{border-style:dashed;color:var(--brand-2)}
+.cardtools{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.cardtools button{flex:1 1 auto}
+.chip small{font-weight:600;opacity:.8;margin-left:4px}
+.sub{font-size:13px;color:var(--muted);margin:-4px 0 8px}
 </style>
 </head>
 <body>
@@ -119,9 +132,7 @@ code{background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12.5px
   <h1>🎱 Bingo 75 · acompañante</h1>
 
   <section>
-    <div class="row" style="margin-bottom:8px">
-      <h2 style="margin:0">Patrones que cuentan</h2>
-    </div>
+    <h2>Patrones que cuentan</h2>
     <div class="seg" id="modeSeg">
       <button data-mode="linea" class="on">Línea</button>
       <button data-mode="lleno">Cartón lleno</button>
@@ -130,12 +141,14 @@ code{background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12.5px
   </section>
 
   <section>
-    <div class="row" style="margin-bottom:8px">
-      <h2 style="margin:0">Mi cartón</h2><span class="spacer"></span>
-      <button id="editBtn">✏️ Editar</button>
-    </div>
+    <h2>Mis cartones</h2>
+    <div class="tabs" id="tabs"></div>
     <div class="card" id="card"></div>
     <div class="msg bad small" id="cardMsg"></div>
+    <div class="cardtools">
+      <button id="editBtn">✏️ Editar</button>
+      <button id="delBtn" class="danger">🗑 Quitar cartón</button>
+    </div>
   </section>
 
   <section>
@@ -152,22 +165,23 @@ code{background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12.5px
   </section>
 
   <section>
-    <div class="bingo-banner" id="banner">¡BINGO! 🎉</div>
+    <div class="bingo-banner" id="banner"></div>
+    <h2 id="gTitle">Todos mis cartones</h2>
+    <p class="sub" id="gSub"></p>
     <div class="kpis">
       <div class="kpi"><b id="kK">0</b><span>cantados (k)</span></div>
       <div class="kpi"><b id="kR">75</b><span>en bombo (R)</span></div>
       <div class="kpi"><b id="kE1">—</b><span>jugadas esp. 1ª línea</span></div>
-      <div class="kpi"><b id="kEF">—</b><span>jugadas esp. lleno</span></div>
+      <div class="kpi"><b id="kEF">—</b><span>jugadas esp. 1er lleno</span></div>
     </div>
-    <h2 id="pTitle">Probabilidad de BINGO</h2>
     <table>
-      <thead><tr><th>próximas t</th><th>t=1</th><th>t=3</th><th>t=5</th><th>t=10</th></tr></thead>
+      <thead><tr><th id="pTitle">P(BINGO) en próximas t</th><th>t=1</th><th>t=3</th><th>t=5</th><th>t=10</th></tr></thead>
       <tbody>
-        <tr><td>Exacta</td><td id="pe1"></td><td id="pe3"></td><td id="pe5"></td><td id="pe10"></td></tr>
-        <tr><td class="muted">Monte Carlo</td><td class="muted" id="pm1"></td><td class="muted" id="pm3"></td><td class="muted" id="pm5"></td><td class="muted" id="pm10"></td></tr>
+        <tr><td id="peLabel">Exacta</td><td id="pe1"></td><td id="pe3"></td><td id="pe5"></td><td id="pe10"></td></tr>
+        <tr id="pmRow"><td class="muted">Monte Carlo</td><td class="muted" id="pm1"></td><td class="muted" id="pm3"></td><td class="muted" id="pm5"></td><td class="muted" id="pm10"></td></tr>
       </tbody>
     </table>
-    <p class="small muted" style="margin:6px 0 0">Exacta por inclusión-exclusión · Monte Carlo con 20.000 simulaciones como verificación.</p>
+    <p class="small muted" style="margin:6px 0 0" id="methodNote"></p>
   </section>
 
   <section>
@@ -176,7 +190,8 @@ code{background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12.5px
   </section>
 
   <section>
-    <h2>Patrones</h2>
+    <h2 id="dTitle">Detalle del cartón</h2>
+    <p class="sub" id="dSub"></p>
     <table>
       <thead><tr><th>Patrón</th><th>faltan n</th><th>t=1</th><th>t=3</th><th>t=5</th><th>t=10</th></tr></thead>
       <tbody id="patBody"></tbody>
@@ -196,14 +211,17 @@ code{background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12.5px
         <li><b>Patrón con n faltantes</b> (hipergeométrica): de las R bolillas del bombo se sacan t sin reposición.
           Que salgan los n que necesito: <code>P = C(R−n, t−n) / C(R, t)</code> = <code>C(t, n) / C(R, n)</code>
           (0 si t &lt; n; 1 si n = 0).</li>
-        <li><b>BINGO (cualquier patrón seleccionado)</b>: inclusión-exclusión sobre los patrones.
-          <code>P(∪Aᵢ) = Σ (−1)^{|S|+1} · P(todos los de S)</code>; para un subconjunto S se necesitan los números
-          de la <i>unión</i> de sus faltantes (m distintos), así que <code>P = C(t, m) / C(R, m)</code>.
-          Son 2¹² = 4.096 subconjuntos de líneas: exacto e instantáneo. Monte Carlo se muestra como chequeo.</li>
-        <li><b>Jugadas esperadas a la 1ª línea</b>: <code>E[T] = Σ_{t=0}^{R−1} (1 − P(línea en ≤ t))</code>.</li>
-        <li><b>Jugadas esperadas a cartón lleno</b>: es la posición del último de n números en un orden aleatorio
-          de R: <code>E = n·(R+1)/(n+1)</code>.</li>
-        <li><b>Me falta 1</b>: números distintos D que completan algún patrón; en la próxima bolilla
+        <li><b>BINGO (cualquier patrón de cualquier cartón)</b>: inclusión-exclusión sobre los patrones.
+          <code>P(∪Aᵢ) = Σ (−1)^{|S|+1} · C(t, m_S) / C(R, m_S)</code>, con m_S = números distintos en la
+          <i>unión</i> de los faltantes de S (un número compartido entre cartones cuenta una vez).
+          Antes se descartan patrones cuyo faltante contiene al de otro (no cambian la unión de eventos).
+          Si quedan más de 18 patrones (2¹⁸ subconjuntos), se usa Monte Carlo con 20.000 simulaciones.</li>
+        <li><b>Jugadas esperadas a la 1ª línea / 1er cartón lleno</b>: <code>E[T] = Σ_{t=0}^{R−1} (1 − P(T ≤ t))</code>.
+          Con un solo cartón, el lleno tiene forma cerrada: <code>E = n·(R+1)/(n+1)</code>
+          (posición del último de n números en un orden aleatorio de R).</li>
+        <li><b>Monte Carlo</b>: se baraja el bombo; un patrón se completa en la jugada = máxima posición de sus
+          faltantes; el BINGO, en la mínima entre patrones.</li>
+        <li><b>Me falta 1</b>: números distintos D que completan algún patrón de algún cartón; en la próxima bolilla
           <code>P = |D| / R</code>.</li>
       </ul>
     </details>
@@ -218,20 +236,24 @@ code{background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12.5px
 const LETTERS = ["B","I","N","G","O"];
 const TS = [1,3,5,10];
 const SIMS = 20000;
-const DEFAULT_CARD = [ // filas
+const MAX_EXACT = 18; // patrones máx. para inclusión-exclusión exacta (2^18 subconjuntos)
+const DEFAULT_GRID = [ // filas
   [14,27,44,56,75],
   [ 5,23,31,58,69],
   [ 2,20,null,53,71],
   [ 7,17,40,54,67],
   [13,25,34,46,66],
 ];
+let nextId = 2;
 const state = {
-  card: DEFAULT_CARD.map(r => r.slice()), // card[fila][col]; centro = null (LIBRE)
-  called: [],                               // en orden
+  cards: [{ id: 1, name: "Cartón 1", grid: DEFAULT_GRID.map(r => r.slice()) }], // grid[fila][col]; centro = null (LIBRE)
+  active: 0,
+  called: [],   // en orden
   mode: "linea",
   entry: "",
   editing: false,
 };
+const activeCard = () => state.cards[state.active];
 
 // ---------- Patrones ----------
 const PATTERNS = [];
@@ -244,7 +266,7 @@ PATTERNS.forEach(p => p.mask = p.cells.reduce((m, i) => m | (1 << i), 0));
 
 const letterOf = n => LETTERS[Math.floor((n - 1) / 15)];
 const colRange = c => [c*15 + 1, c*15 + 15];
-const cellNum = i => state.card[Math.floor(i/5)][i%5];
+const cellNum = (card, i) => card.grid[Math.floor(i/5)][i%5];
 const isSelected = p => state.mode === "ambos" || p.kind === state.mode;
 
 // ---------- Matemática ----------
@@ -257,19 +279,28 @@ function hyp(n, t, R) {
   for (let i = 0; i < n; i++) p *= (t - i) / (R - i);
   return p;
 }
-const popcount = x => { let c = 0; while (x) { x &= x - 1; c++; } return c; };
+const pop32 = x => { x -= (x >>> 1) & 0x55555555; x = (x & 0x33333333) + ((x >>> 2) & 0x33333333); return (((x + (x >>> 4)) & 0x0F0F0F0F) * 0x01010101) >>> 24; };
 
-// Coeficientes de inclusión-exclusión agrupados por tamaño de la unión de faltantes:
-// P(algún patrón en ≤t) = Σ_m coef[m] · hyp(m, t, R)
-function ieCoefs(missMasks) {
-  const k = missMasks.length, N = 1 << k;
-  const uni = new Int32Array(N), bits = new Uint8Array(N);
-  const coef = new Float64Array(26);
+// Conjuntos de números (1..75) como bitsets de 3 palabras de 32 bits
+const toBits = nums => { const b = [0, 0, 0]; for (const n of nums) b[(n - 1) >> 5] |= 1 << ((n - 1) & 31); return b; };
+const subsetOf = (a, b) => (a[0] & ~b[0]) === 0 && (a[1] & ~b[1]) === 0 && (a[2] & ~b[2]) === 0;
+
+// Deja solo los conjuntos minimales: si A ⊆ B, el evento "sale B" implica "sale A" y B no aporta a la unión
+function prune(sets) {
+  const uniq = [...new Map(sets.map(s => [s.nums.slice().sort((a,b)=>a-b).join(","), s])).values()];
+  return uniq.filter(s => !uniq.some(o => o !== s && o.nums.length < s.nums.length && subsetOf(o.bits, s.bits)));
+}
+
+// Inclusión-exclusión agrupada por tamaño de la unión: P(T ≤ t) = Σ_m coef[m] · hyp(m, t, R)
+function ieCoefs(sets) {
+  const k = sets.length, N = 1 << k;
+  const u0 = new Uint32Array(N), u1 = new Uint32Array(N), u2 = new Uint32Array(N), bits = new Uint8Array(N);
+  const coef = new Float64Array(76);
   for (let s = 1; s < N; s++) {
-    const low = s & -s, j = 31 - Math.clz32(low), prev = s ^ low;
-    uni[s] = uni[prev] | missMasks[j];
+    const low = s & -s, j = 31 - Math.clz32(low), prev = s ^ low, b = sets[j].bits;
+    u0[s] = u0[prev] | b[0]; u1[s] = u1[prev] | b[1]; u2[s] = u2[prev] | b[2];
     bits[s] = bits[prev] + 1;
-    coef[popcount(uni[s])] += (bits[s] & 1) ? 1 : -1;
+    coef[pop32(u0[s]) + pop32(u1[s]) + pop32(u2[s])] += (bits[s] & 1) ? 1 : -1;
   }
   return coef;
 }
@@ -278,48 +309,101 @@ const pFromCoefs = (coef, t, R) => {
   for (let m = 0; m < coef.length; m++) if (coef[m]) p += coef[m] * hyp(m, t, R);
   return Math.min(1, Math.max(0, p));
 };
-// E[T] = Σ_{t=0}^{R-1} P(T > t)
-function expectedDraws(coef, R) {
-  let e = 0;
-  for (let t = 0; t < R; t++) e += 1 - pFromCoefs(coef, t, R);
-  return e;
-}
 
-// Monte Carlo: Fisher–Yates parcial sobre las bolillas restantes
-function monteCarlo(remaining, cellOf, coveredMask, patMasks, R) {
-  const tMax = Math.min(10, R), wins = new Int32Array(tMax + 1);
-  const arr = remaining.slice();
+// Monte Carlo: baraja el bombo; T(patrón) = máx. posición de sus faltantes; T(bingo) = mín. entre patrones
+function monteCarlo(sets, remaining) {
+  const R = remaining.length, arr = remaining.slice(), pos = new Int16Array(76);
+  const hist = new Int32Array(R + 1);
+  let sum = 0;
   for (let s = 0; s < SIMS; s++) {
-    let cov = coveredMask, firstWin = -1;
-    for (let d = 0; d < tMax; d++) {
-      const j = d + Math.floor(Math.random() * (R - d));
-      const tmp = arr[d]; arr[d] = arr[j]; arr[j] = tmp;
-      const ci = cellOf[arr[d]];
-      if (ci >= 0) {
-        cov |= 1 << ci;
-        for (const pm of patMasks) if ((cov & pm) === pm) { firstWin = d + 1; break; }
-        if (firstWin > 0) break;
-      }
+    for (let i = R - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = arr[i]; arr[i] = arr[j]; arr[j] = t; }
+    for (let i = 0; i < R; i++) pos[arr[i]] = i + 1;
+    let best = R;
+    for (const set of sets) {
+      let mx = 0;
+      for (const n of set.nums) if (pos[n] > mx) { mx = pos[n]; if (mx >= best) break; }
+      if (mx < best) best = mx;
     }
-    if (firstWin > 0) wins[firstWin]++;
+    hist[best]++; sum += best;
   }
-  const out = {};
-  let acc = 0;
-  for (let t = 1; t <= 10; t++) { if (t <= tMax) acc += wins[t]; out[t] = acc / SIMS; }
-  return out;
+  const cdf = t => { let a = 0; for (let i = 0; i <= Math.min(t, R); i++) a += hist[i]; return a / SIMS; };
+  return { p: Object.fromEntries(TS.map(t => [t, cdf(t)])), e: sum / SIMS };
 }
 
-// ---------- Validación del cartón ----------
-function cardErrors() {
+// Primer éxito entre varios patrones: exacto si caben en inclusión-exclusión, si no Monte Carlo
+function firstWin(rawSets, R, remaining, { withCheck = false } = {}) {
+  if (!rawSets.length) return null;
+  if (rawSets.some(s => s.nums.length === 0)) return { exact: true, p: Object.fromEntries(TS.map(t => [t, 1])), e: 0, k: 0 };
+  const sets = prune(rawSets);
+  if (sets.length <= MAX_EXACT) {
+    const coef = ieCoefs(sets);
+    let e = 0;
+    for (let t = 0; t < R; t++) e += 1 - pFromCoefs(coef, t, R);
+    return { exact: true, k: sets.length, e, p: Object.fromEntries(TS.map(t => [t, pFromCoefs(coef, t, R)])),
+             mc: withCheck && R ? monteCarlo(sets, remaining) : null };
+  }
+  const mc = monteCarlo(sets, remaining);
+  return { exact: false, k: sets.length, e: mc.e, p: mc.p };
+}
+
+// ---------- Validación ----------
+function cardErrors(card) {
   const errs = [], bad = new Set(), seen = new Map();
+  let empty = 0;
   for (let i = 0; i < 25; i++) {
     if (i === 12) continue;
-    const v = cellNum(i), c = i % 5, [lo, hi] = colRange(c);
+    const v = cellNum(card, i), c = i % 5, [lo, hi] = colRange(c);
+    if (v == null) { empty++; continue; }
     if (!Number.isInteger(v) || v < lo || v > hi) { bad.add(i); errs.push(`Columna ${LETTERS[c]} admite ${lo}–${hi}.`); continue; }
     if (seen.has(v)) { bad.add(i); bad.add(seen.get(v)); errs.push(`${v} está repetido.`); }
     seen.set(v, i);
   }
+  if (empty) errs.unshift(`Faltan ${empty} número${empty > 1 ? "s" : ""}.`);
   return { errs: [...new Set(errs)], bad };
+}
+const isUsable = (card, idx) => !(state.editing && idx === state.active) && !cardErrors(card).errs.length;
+
+// ---------- Cálculo ----------
+function cardInfo(card, calledSet, R) {
+  let covered = 1 << 12;
+  for (let i = 0; i < 25; i++) if (i !== 12 && calledSet.has(cellNum(card, i))) covered |= 1 << i;
+  const pats = PATTERNS.map(p => {
+    const missMask = p.mask & ~covered;
+    const missing = p.cells.filter(i => missMask & (1 << i)).map(i => cellNum(card, i));
+    return { ...p, card, missMask, n: missing.length, missing, sel: isSelected(p),
+             probs: TS.map(t => hyp(missing.length, t, R)) };
+  });
+  return { card, covered, pats, won: pats.some(p => p.sel && p.n === 0) };
+}
+const asSet = (p, label) => ({ nums: p.missing, bits: toBits(p.missing), label });
+
+function compute() {
+  const calledSet = new Set(state.called);
+  const k = state.called.length, R = 75 - k;
+  const remaining = [];
+  for (let n = 1; n <= 75; n++) if (!calledSet.has(n)) remaining.push(n);
+  const infos = state.cards.map((c, i) => isUsable(c, i) ? cardInfo(c, calledSet, R) : null);
+  const usable = infos.filter(Boolean);
+  const label = (inf, p) => `${inf.card.name} · ${p.name}`;
+  const setsWhere = (f, list = usable) => list.flatMap(inf => inf.pats.filter(f).map(p => asSet(p, label(inf, p))));
+
+  const global = {
+    bingo: firstWin(setsWhere(p => p.sel), R, remaining, { withCheck: true }),
+    line: firstWin(setsWhere(p => p.kind === "linea"), R, remaining),
+    full: firstWin(setsWhere(p => p.kind === "lleno"), R, remaining),
+  };
+  const act = infos[state.active];
+  let detail = null;
+  if (act) {
+    const one = [act];
+    const full = act.pats[12];
+    detail = {
+      bingo: firstWin(setsWhere(p => p.sel, one), R, remaining),
+      line: firstWin(setsWhere(p => p.kind === "linea", one), R, remaining),
+      eFull: full.n === 0 ? 0 : full.n * (R + 1) / (full.n + 1),
+    };
+  }
+  return { k, R, infos, usable, global, act, detail };
 }
 
 // ---------- Render ----------
@@ -330,56 +414,39 @@ const fmtP = p => {
   if (p < 0.0001) return "<0,01%";
   return (p * 100).toLocaleString("es-CL", { maximumFractionDigits: p < 0.01 ? 2 : 1 }) + "%";
 };
-const fmtN = x => x.toLocaleString("es-CL", { maximumFractionDigits: 1 });
+const fmtN = x => x == null ? "—" : x.toLocaleString("es-CL", { maximumFractionDigits: 1 });
 
-function compute() {
-  const calledSet = new Set(state.called);
-  const k = state.called.length, R = 75 - k;
-  let covered = 1 << 12;
-  for (let i = 0; i < 25; i++) if (i !== 12 && calledSet.has(cellNum(i))) covered |= 1 << i;
-
-  const pats = PATTERNS.map(p => {
-    const missMask = p.mask & ~covered;
-    const missing = p.cells.filter(i => missMask & (1 << i)).map(cellNum);
-    return { ...p, missMask, n: missing.length, missing, sel: isSelected(p),
-             probs: TS.map(t => hyp(missing.length, t, R)) };
-  });
-  const sel = pats.filter(p => p.sel);
-  const coefSel = ieCoefs(sel.map(p => p.missMask));
-  const coefLine = ieCoefs(pats.filter(p => p.kind === "linea").map(p => p.missMask));
-  const full = pats[12];
-
-  const remaining = [], cellOf = new Int8Array(76).fill(-1);
-  for (let i = 0; i < 25; i++) if (i !== 12) cellOf[cellNum(i)] = i;
-  for (let n = 1; n <= 75; n++) if (!calledSet.has(n)) remaining.push(n);
-
-  const won = sel.some(p => p.n === 0);
-  return {
-    k, R, covered, pats, won,
-    exact: Object.fromEntries(TS.map(t => [t, pFromCoefs(coefSel, t, R)])),
-    mc: won || R === 0 ? null : monteCarlo(remaining, cellOf, covered, sel.map(p => p.mask), R),
-    eLine: expectedDraws(coefLine, R),
-    eFull: full.n === 0 ? 0 : full.n * (R + 1) / (full.n + 1),
-  };
+function renderTabs(res) {
+  $("tabs").innerHTML = state.cards.map((c, i) => {
+    const inf = res && res.infos[i];
+    let dot = "";
+    if (!(state.editing && i === state.active) && cardErrors(c).errs.length) dot = `<span class="dot err">⚠</span>`;
+    else if (inf && inf.won) dot = `<span class="dot win">BINGO</span>`;
+    else if (inf && inf.pats.some(p => p.sel && p.n === 1)) dot = `<span class="dot">a 1</span>`;
+    return `<button class="tab${i === state.active ? " on" : ""}" data-i="${i}">${c.name}${dot}</button>`;
+  }).join("") + `<button class="tab add" data-add="1">＋ Agregar cartón</button>`;
+  $("delBtn").disabled = state.cards.length < 2;
+  $("delBtn").style.opacity = state.cards.length < 2 ? .4 : 1;
 }
 
-function renderCard(res) {
-  const el = $("card");
+function renderCard(inf) {
+  const card = activeCard(), el = $("card");
   el.classList.toggle("editing", state.editing);
-  const { errs, bad } = cardErrors();
+  const { errs, bad } = cardErrors(card);
   $("cardMsg").textContent = errs.join(" ");
+  $("editBtn").textContent = state.editing ? "✓ Listo" : "✏️ Editar";
   let html = LETTERS.map(l => `<div class="hd">${l}</div>`).join("");
-  const sel1 = res ? res.pats.filter(p => p.sel && p.n === 1) : [];
-  const sel0 = res ? res.pats.filter(p => p.sel && p.n === 0) : [];
+  const sel1 = inf ? inf.pats.filter(p => p.sel && p.n === 1) : [];
+  const sel0 = inf ? inf.pats.filter(p => p.sel && p.n === 0) : [];
   for (let i = 0; i < 25; i++) {
     const cls = ["cell"];
-    if (i === 12) { cls.push("free", "marked"); html += `<div class="${cls.join(" ")}">LIBRE</div>`; continue; }
-    const v = cellNum(i);
+    if (i === 12) { html += `<div class="cell free marked">LIBRE</div>`; continue; }
+    const v = cellNum(card, i);
     if (state.editing) {
-      html += `<div class="${cls.join(" ")}"><input inputmode="numeric" data-i="${i}" value="${v ?? ""}" class="${bad.has(i) ? "err" : ""}"></div>`;
+      html += `<div class="cell"><input id="c${card.id}-${i}" inputmode="numeric" aria-label="Columna ${LETTERS[i%5]}, fila ${Math.floor(i/5)+1}" data-i="${i}" value="${v ?? ""}" class="${bad.has(i) ? "err" : ""}"></div>`;
       continue;
     }
-    if (res && res.covered & (1 << i)) cls.push("marked");
+    if (inf && inf.covered & (1 << i)) cls.push("marked");
     if (sel1.some(p => p.missMask & (1 << i))) cls.push("need");
     else if (sel1.some(p => p.mask & (1 << i))) cls.push("near");
     if (sel0.some(p => p.mask & (1 << i))) cls.push("won");
@@ -399,7 +466,7 @@ function renderEntry() {
 
 function renderBoard() {
   const set = new Set(state.called), mine = new Set();
-  for (let i = 0; i < 25; i++) if (i !== 12) mine.add(cellNum(i));
+  for (const c of state.cards) for (let i = 0; i < 25; i++) if (i !== 12) mine.add(cellNum(c, i));
   const last = state.called[state.called.length - 1];
   let html = "";
   for (let c = 0; c < 5; c++) {
@@ -414,52 +481,80 @@ function renderBoard() {
   $("board").innerHTML = html;
   $("history").textContent = state.called.length
     ? "Orden: " + state.called.map(n => `${letterOf(n)}${n}`).join(" · ")
-    : "Aún no se canta ningún número. El contorno marca los números de tu cartón.";
+    : "Aún no se canta ningún número. El contorno marca los números de tus cartones.";
 }
+
+const MODE_TXT = { linea: "línea", lleno: "cartón lleno", ambos: "línea o lleno" };
 
 function render() {
   document.querySelectorAll("#modeSeg button").forEach(b => b.classList.toggle("on", b.dataset.mode === state.mode));
   renderEntry();
   renderBoard();
-  const { errs } = cardErrors();
-  if (errs.length || state.editing) {
-    renderCard(null);
-    ["pe1","pe3","pe5","pe10","pm1","pm3","pm5","pm10"].forEach(id => $(id).textContent = "—");
-    $("need1").innerHTML = `<p class="muted small">${state.editing ? "Termina de editar el cartón para ver los cálculos." : "Corrige el cartón para ver los cálculos."}</p>`;
-    $("patBody").innerHTML = "";
-    $("banner").style.display = "none";
-    return;
-  }
   const res = compute();
-  renderCard(res);
+  renderTabs(res);
+  renderCard(res.act);
 
+  // --- Global ---
+  const C = res.usable.length;
   $("kK").textContent = res.k;
   $("kR").textContent = res.R;
-  $("kE1").textContent = fmtN(res.eLine);
-  $("kEF").textContent = fmtN(res.eFull);
-  $("pTitle").textContent = { linea: "Probabilidad de BINGO (cualquier línea)", lleno: "Probabilidad de cartón lleno", ambos: "Probabilidad de BINGO (línea o lleno)" }[state.mode];
-  $("banner").style.display = res.won ? "block" : "none";
-  $("banner").textContent = "¡BINGO! 🎉 " + res.pats.filter(p => p.sel && p.n === 0).map(p => p.name).join(", ");
-  for (const t of TS) {
-    $("pe" + t).textContent = fmtP(res.exact[t]);
-    $("pm" + t).textContent = res.mc ? fmtP(res.mc[t]) : "—";
+  $("gTitle").textContent = state.cards.length > 1 ? `Todos mis cartones (${C})` : "Mi cartón";
+  $("pTitle").textContent = `P(${MODE_TXT[state.mode]}) en próximas t`;
+  const skipped = state.cards.length - C;
+  $("gSub").textContent = skipped ? `${skipped} cartón(es) fuera del cálculo: ${state.editing ? "en edición o " : ""}incompleto(s).` : "";
+  const g = res.global;
+  const winners = res.usable.flatMap(inf => inf.pats.filter(p => p.sel && p.n === 0).map(p => `${state.cards.length > 1 ? inf.card.name + " · " : ""}${p.name}`));
+  $("banner").style.display = winners.length ? "block" : "none";
+  $("banner").textContent = "¡BINGO! 🎉 " + winners.join(", ");
+  if (!g.bingo) {
+    ["kE1","kEF"].forEach(id => $(id).textContent = "—");
+    TS.forEach(t => { $("pe" + t).textContent = "—"; $("pm" + t).textContent = "—"; });
+    $("methodNote").textContent = "Completa al menos un cartón para ver los cálculos.";
+  } else {
+    $("kE1").textContent = fmtN(g.line && g.line.e);
+    $("kEF").textContent = fmtN(g.full && g.full.e);
+    $("peLabel").textContent = g.bingo.exact ? "Exacta" : "Monte Carlo";
+    $("pmRow").style.display = g.bingo.exact ? "" : "none";
+    TS.forEach(t => {
+      $("pe" + t).textContent = fmtP(g.bingo.p[t]);
+      $("pm" + t).textContent = g.bingo.mc ? fmtP(g.bingo.mc.p[t]) : "—";
+    });
+    const est = x => x.exact ? "exacta" : "Monte Carlo";
+    $("methodNote").textContent = g.bingo.exact
+      ? `Exacta por inclusión-exclusión (${g.bingo.k} patrones relevantes) · Monte Carlo con 20.000 simulaciones como verificación.`
+      : `${g.bingo.k} patrones relevantes: demasiados para inclusión-exclusión, se usa Monte Carlo con 20.000 simulaciones (±0,7 pp).`
+        + ` Jugadas esperadas: 1ª línea ${est(g.line)}, lleno ${est(g.full)}.`;
   }
 
-  // Me falta 1
-  const ones = res.pats.filter(p => p.sel && p.n === 1);
+  // --- Me falta 1 (todos los cartones) ---
+  const ones = res.usable.flatMap(inf => inf.pats.filter(p => p.sel && p.n === 1).map(p => ({ inf, p, num: p.missing[0] })));
   if (!ones.length) {
-    $("need1").innerHTML = `<p class="muted small">${res.won ? "¡Ya ganaste con los patrones seleccionados!" : "Ningún patrón seleccionado está a 1 número."}</p>`;
+    $("need1").innerHTML = `<p class="muted small">${winners.length ? "¡Ya ganaste con los patrones seleccionados!" : "Ningún patrón seleccionado está a 1 número."}</p>`;
   } else {
-    const distinct = [...new Set(ones.map(p => p.missing[0]))].sort((a, b) => a - b);
+    const multi = state.cards.length > 1;
+    const byNum = new Map();
+    for (const o of ones) { if (!byNum.has(o.num)) byNum.set(o.num, new Set()); byNum.get(o.num).add(o.inf.card.name.replace("Cartón ", "C")); }
+    const distinct = [...byNum.keys()].sort((a, b) => a - b);
     const pNext = res.R ? distinct.length / res.R : 0;
     $("need1").innerHTML =
-      `<div class="chips">${distinct.map(n => `<span class="chip">${letterOf(n)}-${n}</span>`).join("")}</div>
+      `<div class="chips">${distinct.map(n => `<span class="chip">${letterOf(n)}-${n}${multi ? `<small>${[...byNum.get(n)].join(" ")}</small>` : ""}</span>`).join("")}</div>
        <div class="row"><span class="big">${fmtP(pNext)}</span><span class="muted small">de que salga uno en la próxima bolilla<br>(${distinct.length} número${distinct.length > 1 ? "s" : ""} / ${res.R} en bombo)</span></div>
-       <ul class="small muted" style="margin:8px 0 0;padding-left:18px">${ones.map(p => `<li>${p.name}: falta <b>${letterOf(p.missing[0])}-${p.missing[0]}</b></li>`).join("")}</ul>`;
+       <ul class="small muted" style="margin:8px 0 0;padding-left:18px">${ones.map(o => `<li>${multi ? o.inf.card.name + " · " : ""}${o.p.name}: falta <b>${letterOf(o.num)}-${o.num}</b></li>`).join("")}</ul>`;
   }
 
-  // Tabla de patrones
-  $("patBody").innerHTML = res.pats.map(p => {
+  // --- Detalle del cartón activo ---
+  const card = activeCard();
+  $("dTitle").textContent = `Detalle · ${card.name}`;
+  if (!res.act) {
+    $("dSub").textContent = state.editing ? "Termina de editar el cartón para ver su detalle." : "Corrige el cartón para ver su detalle.";
+    $("patBody").innerHTML = "";
+    return;
+  }
+  const d = res.detail;
+  $("dSub").textContent = `P(${MODE_TXT[state.mode]}) solo con este cartón: ` +
+    TS.map(t => `t=${t} ${fmtP(d.bingo.p[t])}`).join(" · ") +
+    `. Jugadas esperadas: 1ª línea ${fmtN(d.line.e)}, lleno ${fmtN(d.eFull)}.`;
+  $("patBody").innerHTML = res.act.pats.map(p => {
     const cls = [p.sel ? "" : "off", p.n === 1 ? "n1" : "", p.n === 0 ? "n0" : ""].join(" ");
     const tip = p.n > 0 && p.n <= 4 ? ` <span class="muted small">(${p.missing.join(", ")})</span>` : "";
     return `<tr class="${cls}"><td>${p.name}${tip}</td><td>${p.n === 0 ? "✓" : p.n}</td>${p.probs.map(x => `<td>${fmtP(x)}<div class="bar"><i style="width:${(x * 100).toFixed(1)}%"></i></div></td>`).join("")}</tr>`;
@@ -478,9 +573,9 @@ function submit() {
   if (!Number.isInteger(n) || n < 1 || n > 75) { flash(`✖ ${n} está fuera de rango (1–75).`, "bad"); render(); return; }
   if (state.called.includes(n)) { flash(`✖ ${letterOf(n)}-${n} ya fue cantado.`, "bad"); render(); return; }
   state.called.push(n);
-  let mine = false;
-  for (let i = 0; i < 25; i++) if (i !== 12 && cellNum(i) === n) mine = true;
-  flash(mine ? `✔ ${letterOf(n)}-${n} — ¡está en tu cartón!` : `✔ ${letterOf(n)}-${n} registrado.`, "ok");
+  const hits = state.cards.filter(c => { for (let i = 0; i < 25; i++) if (i !== 12 && cellNum(c, i) === n) return true; return false; });
+  const where = state.cards.length > 1 ? ` (${hits.map(c => c.name).join(", ")})` : "";
+  flash(hits.length ? `✔ ${letterOf(n)}-${n} — ¡está en tu cartón!${where}` : `✔ ${letterOf(n)}-${n} registrado.`, "ok");
   render();
 }
 function press(key) {
@@ -504,37 +599,66 @@ document.addEventListener("keydown", e => {
   else if (e.key === "Enter") press("ok");
 });
 
+// Botón que pide un segundo toque para confirmar (el visor no muestra confirm())
+function twoTap(btn, label, armedLabel, needsConfirm, action) {
+  btn.addEventListener("click", () => {
+    if (needsConfirm() && !btn.dataset.armed) {
+      btn.dataset.armed = "1"; btn.textContent = armedLabel;
+      clearTimeout(btn._t); btn._t = setTimeout(() => { delete btn.dataset.armed; btn.textContent = label; }, 3000);
+      return;
+    }
+    delete btn.dataset.armed; btn.textContent = label;
+    action();
+  });
+}
+
 $("undoBtn").addEventListener("click", () => {
   const n = state.called.pop();
   flash(n ? `↶ Se quitó ${letterOf(n)}-${n}.` : "No hay nada que deshacer.", n ? "" : "bad");
   render();
 });
-$("resetBtn").addEventListener("click", () => {
-  const b = $("resetBtn");
-  if (state.called.length && !b.dataset.armed) {
-    b.dataset.armed = "1"; b.textContent = "¿Seguro? Toca otra vez";
-    clearTimeout(b._t); b._t = setTimeout(() => { delete b.dataset.armed; b.textContent = "⟲ Nueva partida"; }, 3000);
-    return;
-  }
-  delete b.dataset.armed; b.textContent = "⟲ Nueva partida";
-  state.called = []; state.entry = ""; flash("Nueva partida.", ""); render();
+twoTap($("resetBtn"), "⟲ Nueva partida", "¿Seguro? Toca otra vez", () => state.called.length > 0, () => {
+  state.called = []; state.entry = ""; flash("Nueva partida. Tus cartones se mantienen.", ""); render();
+});
+twoTap($("delBtn"), "🗑 Quitar cartón", "¿Quitar? Toca otra vez", () => true, () => {
+  if (state.cards.length < 2) return;
+  const gone = state.cards.splice(state.active, 1)[0];
+  state.active = Math.min(state.active, state.cards.length - 1);
+  state.editing = false;
+  flash(`Se quitó ${gone.name}.`, "");
+  render();
 });
 $("modeSeg").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   state.mode = b.dataset.mode; render();
 });
+$("tabs").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.add) {
+    state.cards.push({ id: nextId, name: `Cartón ${nextId}`, grid: Array.from({ length: 5 }, () => Array(5).fill(null)) });
+    nextId++;
+    state.active = state.cards.length - 1;
+    state.editing = true;
+    flash("Escribe los 24 números del cartón nuevo y toca «Listo».", "");
+  } else {
+    state.active = +b.dataset.i;
+    state.editing = false;
+  }
+  render();
+  if (state.editing) { const f = document.querySelector("#card input"); if (f) f.focus(); }
+});
 $("editBtn").addEventListener("click", () => {
-  if (state.editing && cardErrors().errs.length) { $("cardMsg").textContent = "Corrige los errores antes de terminar: " + cardErrors().errs.join(" "); return; }
+  const { errs } = cardErrors(activeCard());
+  if (state.editing && errs.length) { $("cardMsg").textContent = "Corrige los errores antes de terminar: " + errs.join(" "); return; }
   state.editing = !state.editing;
-  $("editBtn").textContent = state.editing ? "✓ Listo" : "✏️ Editar";
   render();
 });
 $("card").addEventListener("input", e => {
   const inp = e.target; if (!inp.dataset.i) return;
   const i = +inp.dataset.i, raw = inp.value.replace(/\D/g, "").slice(0, 2);
   inp.value = raw;
-  state.card[Math.floor(i/5)][i%5] = raw === "" ? null : +raw;
-  const { errs, bad } = cardErrors();
+  activeCard().grid[Math.floor(i/5)][i%5] = raw === "" ? null : +raw;
+  const { errs, bad } = cardErrors(activeCard());
   $("cardMsg").textContent = errs.join(" ");
   document.querySelectorAll("#card input").forEach(x => x.classList.toggle("err", bad.has(+x.dataset.i)));
   renderBoard();
